@@ -26,11 +26,11 @@ Here are a few details about this implementation.
 MSCOCO or Kitti datasets are big and not everyone is interested in understanding them just to do a few experiments. So, I decided to write a function that automatically generates a toy dataset of circles.  The dataset generates an image with multiple circles (max 5]. The circles may overlap. 
 ## The Model
 I didn't want to complicate things so I used resnet 18 as encoder and followed unet in the upsampling stages. Let's say the input to model is 1x1x256x256 (Batch Size x Channels x Width x Height), then output of
-model will be 1x(N+4)x64x64. Here 1 is the batch size, N+4 is the number of output channels and 64 is the downsampled image width. Here $N$ is the number of object categories. In my implementation we only have one category of object i.e. circle. So, in our case the output is 1x5x64x64. Also, notice that we could have gone for complete upsampling like in UNET. The authors went for 64x64 size. An advantage of traning on downsampled images is that it reduces the number of parameters. 
+model will be 1x(N+4)x64x64. Here 1 is the batch size, N+4 is the number of output channels and 64 is the downsampled image width. Here N is the number of object categories. In my implementation we only have one category of object i.e. circle. So, in our case the output is 1x5x64x64. Also, notice that we could have gone for complete upsampling like in UNET. The authors went for 64x64 size. An advantage of traning on downsampled images is that it reduces the number of parameters. 
 
 Now an obvious question is if our model output is 4 times smaller [say 64] than the input image, then how are we going to get a fine prediction about the object location ? It seems like we can be off by 4 pixels both in height and width... The authors propose an innovative solution. They predict an offset map to finetune the object position. 
 So, if model output is 1x5x64x64, the first channel (1x1x64x64) will be score of an object at those pixels, second and third channels represent the width and height. If coordinates say (30,23) are 1, it means that in the original image at the coordinate (30\*4,23\*4), some object may be present. The last 2 channels are offsets. It can be used to get better estimate of the object location.
-Also, note that we use sigmoid activation for offsets. This ensures that they are bounded between $[0,1]$.
+Also, note that we use sigmoid activation for offsets. This ensures that they are bounded between [0,1].
 
 ## The loss functions
 
@@ -39,9 +39,11 @@ We use two types of loss:
 
 ![Model Outputs](./outputs/mask_loss.png)
 
-This is modified version of focal loss.  Here $\alpha$ and $\beta$ are parameters of focal loss. We use $\alpha=2$ and $\beta=4$. In original implementation, the authors use an object centered gaussian kernel
-$Y = \exp(-\frac{(x-p_{x})^{2}+(y-p_{y})^{2} }{ 2\sigma^2 })$.
-Here $p_{x}$ and $p_{y}$ are the low resolution center of the object. $\sigma$ is object size adaptive standard deviation. For this toy dataset,using gaussian kernel didn't seem to make much difference. So, in the interest of keeping it minimal I just use $Y (p_{x},p_{y}) = 1$.
+This is modified version of focal loss.  Here <a href="https://www.codecogs.com/eqnedit.php?latex=\alpha" target="_blank"><img src="https://latex.codecogs.com/gif.latex?\alpha" title="\alpha" /></a> and <a href="https://www.codecogs.com/eqnedit.php?latex=\beta" target="_blank"><img src="https://latex.codecogs.com/gif.latex?\beta" title="\beta" /></a> are parameters of focal loss. We set alpha as 2 and beta as 4. In original implementation, the authors use an object centered gaussian kernel
+<!-- $Y = \exp(-\frac{(x-p_{x})^{2}+(y-p_{y})^{2} }{ 2\sigma^2 })$. -->
+<a href="https://www.codecogs.com/eqnedit.php?latex=Y&space;=&space;\exp(-\frac{(x-p_{x})^{2}&plus;(y-p_{y})^{2}&space;}{&space;2\sigma^2&space;})" target="_blank"><img src="https://latex.codecogs.com/gif.latex?Y&space;=&space;\exp(-\frac{(x-p_{x})^{2}&plus;(y-p_{y})^{2}&space;}{&space;2\sigma^2&space;})" title="Y = \exp(-\frac{(x-p_{x})^{2}+(y-p_{y})^{2} }{ 2\sigma^2 })" /></a>
+
+Here <a href="https://www.codecogs.com/eqnedit.php?latex=p_{x}" target="_blank"><img src="https://latex.codecogs.com/gif.latex?p_{x}" title="p_{x}" /></a> and <a href="https://www.codecogs.com/eqnedit.php?latex=p_{y}" target="_blank"><img src="https://latex.codecogs.com/gif.latex?p_{y}" title="p_{y}" /></a> are the low resolution center of the object. <a href="https://www.codecogs.com/eqnedit.php?latex=\sigma" target="_blank"><img src="https://latex.codecogs.com/gif.latex?\sigma" title="\sigma" /></a> is object size adaptive standard deviation. For this toy dataset,using gaussian kernel didn't seem to make much difference. So, in the interest of keeping it minimal I just use <a href="https://www.codecogs.com/eqnedit.php?latex=$Y&space;(p_{x},p_{y})&space;=&space;1$" target="_blank"><img src="https://latex.codecogs.com/gif.latex?$Y&space;(p_{x},p_{y})&space;=&space;1$" title="$Y (p_{x},p_{y}) = 1$" /></a>.
 
 - Size and offset Loss
 
