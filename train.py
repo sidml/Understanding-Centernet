@@ -1,15 +1,9 @@
 import torch
-from glob import glob
 from model import Res18UnetCenterNet
 from loss import criterion
 from dataset import ToyDataset
-from postprocess import heatmap_to_labeled_bboxes
 from ctdet import ctdet_decode
-import matplotlib.patches as patches
-
 import matplotlib.pyplot as plt
-
-from tqdm import tqdm
 import numpy as np
 import cv2
 
@@ -40,10 +34,10 @@ def train_model(model, optimizer, dataloader, epoch):
         running_offset_loss += offset_loss
 
         if batch_idx % 5 == 0:
-            print(f'\r{running_mask_loss/(batch_idx+1):.3f} {running_size_loss/(batch_idx+1):.3f} {running_offset_loss/(batch_idx+1):.3f}',\
-             end='', flush=True)
+            print(f'\r{running_mask_loss/(batch_idx+1):.3f} {running_size_loss/(batch_idx+1):.3f} {running_offset_loss/(batch_idx+1):.3f}',
+                  end='', flush=True)
 
-    print('\r',end='', flush=True)
+    print('\r', end='', flush=True)
     print(f"Epoch: {epoch} mask_loss: {running_mask_loss/(batch_idx): .3f} "
           f"size_loss: {running_size_loss/(batch_idx): .3f} offset_loss: {running_offset_loss/(batch_idx): .3f}")
 
@@ -117,7 +111,7 @@ if __name__ == '__main__':
     model = Res18UnetCenterNet()
     model = model.to(device)
     optim = torch.optim.Adam(model.parameters())
-    dataset = ToyDataset(img_shape=(128,128))
+    dataset = ToyDataset(img_shape=(128, 128))
 
     dataloader = torch.utils.data.DataLoader(dataset=dataset,
                                              batch_size=8, num_workers=0)
